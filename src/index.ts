@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from "express";
 import { PORT } from "./secrets";
 import rootRouter from "./router";
 import { PrismaClient } from "@prisma/client";
+import { errorMiddleware } from "./middlewares/errors";
 
 const app: Express = express();
 
@@ -10,7 +11,26 @@ app.use('/api', rootRouter)
 
 export const prismaCilent = new PrismaClient({
   log: ['query']
+}).$extends({
+  result:{
+    address:{
+      formattedAddress: {
+        needs:{
+          lineOne: true,
+          lineTwo: true,
+          city: true,
+          country: true,
+          pincode: true
+        },
+        compute: (addr) => {
+          return `${addr.lineOne}, ${addr.lineTwo}, ${addr.city}, ${addr.country}, ${addr.pincode}`
+        }
+      }
+    }
+  }
 })
+
+app.use(errorMiddleware)
 
 app.listen(PORT, () => {
   console.log("Connect");
